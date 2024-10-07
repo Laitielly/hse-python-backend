@@ -1,9 +1,23 @@
 from .models import CartItem, Cart, Item
-from .queries import generate_new_cart
+from .queries import (
+    generate_new_cart, 
+    get_cart_from_id, 
+    get_carts, 
+    add_item_to_cart,
+    generate_new_item,
+    get_item_from_id,
+    get_items
+)
 
 __all__ = [
     "CartItem",
     "Cart",
     "Item",
-    "generate_new_cart"
+    "generate_new_cart",
+    "get_cart_from_id",
+    "get_carts",
+    "add_item_to_cart",
+    "generate_new_item",
+    "get_item_from_id",
+    "get_items"
 ]
