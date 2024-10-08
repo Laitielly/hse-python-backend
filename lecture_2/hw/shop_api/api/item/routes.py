@@ -5,10 +5,14 @@ from lecture_2.hw.shop_api.store import (
     Item,
     generate_new_item,
     get_item_from_id,
-    get_items
+    get_items,
+    update_item,
+    patch_item,
+    delete_item
 )
 from .contracts import (
-    ItemRequest
+    ItemRequest,
+    ItemPatchRequest
 )
 from typing import Optional, List
 
@@ -49,6 +53,8 @@ async def create_item(item_request: ItemRequest, response: Response) -> Item:
 async def get_item(item_id: int) -> Item:
     try:
         item = get_item_from_id(item_id)
+        if item.deleted:
+            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Item with this id was deleted")
     except KeyError:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Item with this id is not found")
     return item
@@ -84,22 +90,67 @@ async def get_list_items(offset: int = 0,
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Items not found")
     return list_of_items
 
-# @router.post(
-#     "/{cart_id}/add/{item_id}",
-#     responses={
-#         HTTPStatus.CREATED: {
-#             "description": "Successfully added item to cart",
-#         },
-#         HTTPStatus.UNPROCESSABLE_ENTITY: {
-#             "description": "Failed to add item to cart",
-#         },
-#     },
-#     status_code=HTTPStatus.CREATED,
-#     response_model=Cart,
-# )
-# async def add_item_to_cart_from_id(cart_id: int, item_id: int) -> Cart:
-#     try:
-#         cart = add_item_to_cart(cart_id, item_id)
-#     except Exception as e:
-#         raise HTTPException(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, detail=str(e))
-#     return cart
+@router.put(
+    "/{item_id}",
+    responses={
+        HTTPStatus.OK: {
+            "description": "Data in item was successfully changed",
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Failed to change data",
+        },
+    },
+    status_code=HTTPStatus.OK,
+    response_model=Item,
+)
+async def update_item_from_id(item_id: int, item_request: ItemRequest) -> Item:
+    try:
+        item = update_item(item_id, item_request)
+    except KeyError:
+        raise HTTPException(HTTPStatus.NOT_FOUND, "Item not found")
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, detail=str(e))
+    return item
+
+@router.patch(
+    "/{item_id}",
+    responses={
+        HTTPStatus.OK: {
+            "description": "Data in item was successfully changed",
+        },
+        HTTPStatus.UNPROCESSABLE_ENTITY: {
+            "description": "Failed to change data",
+        },
+    },
+    status_code=HTTPStatus.OK,
+    response_model=Item,
+)
+async def patch_item_from_id(item_id: int, item_request: ItemPatchRequest) -> Item:
+    try:
+        item = patch_item(item_id, item_request)
+    except KeyError:
+        raise HTTPException(HTTPStatus.NOT_FOUND, "Item not found")
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.NOT_MODIFIED, detail=str(e))
+    return item
+
+@router.delete(
+    "/{item_id}",
+    responses={
+        HTTPStatus.OK: {
+            "description": "Item was successfully deleted"
+            },
+        HTTPStatus.NOT_FOUND: {
+            "description": "Failed to delete item"
+            },
+    },
+    status_code=HTTPStatus.OK,
+)
+async def delete_item_from_id(item_id: int):
+    try:
+        item = delete_item(item_id)
+    except KeyError:
+        raise HTTPException(HTTPStatus.NOT_FOUND, "Item not found")
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=str(e))
+    return item

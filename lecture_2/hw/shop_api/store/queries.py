@@ -10,7 +10,8 @@ from lecture_2.hw.shop_api.store.db import (
     _item
 )
 from lecture_2.hw.shop_api.api.item.contracts import (
-    ItemRequest
+    ItemRequest,
+    ItemPatchRequest
 )
 
 
@@ -129,3 +130,29 @@ def get_items(offset: int,
     ]
 
     return filtered_items
+
+def update_item(item_id: int, item_request: ItemRequest) -> Item:
+    item = get_item_from_id(item_id)
+
+    if item.deleted:
+        raise ValueError("Item was deleted")
+    item.update(item_request)
+
+    return item
+
+def patch_item(item_id: int, item_request: ItemPatchRequest) -> Item:
+    item = get_item_from_id(item_id)
+    if item.deleted:
+        raise ValueError("Item was deleted")
+
+    if item_request.name is not None:
+        item.update_name(item_request.name)
+
+    if item_request.price is not None:
+        item.update_price(item_request.price)
+
+    return item
+
+def delete_item(item_id: int):
+    item = get_item_from_id(item_id)
+    item.deleted = True

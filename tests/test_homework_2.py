@@ -67,13 +67,13 @@ def existing_item() -> dict[str, Any]:
     ).json()
 
 
-# @pytest.fixture()
-# def deleted_item(existing_item: dict[str, Any]) -> dict[str, Any]:
-#     item_id = existing_item["id"]
-#     client.delete(f"/item/{item_id}")
+@pytest.fixture()
+def deleted_item(existing_item: dict[str, Any]) -> dict[str, Any]:
+    item_id = existing_item["id"]
+    client.delete(f"/item/{item_id}")
 
-#     existing_item["deleted"] = True
-#     return existing_item
+    existing_item["deleted"] = True
+    return existing_item
 
 def test_post_cart() -> None:
     response = client.post("/cart")
@@ -208,77 +208,74 @@ def test_get_item_list(query: dict[str, Any], status_code: int) -> None:
             assert all(item["deleted"] is False for item in data)
 
 
-# @pytest.mark.parametrize(
-#     ("body", "status_code"),
-#     [
-#         ({}, HTTPStatus.UNPROCESSABLE_ENTITY),
-#         ({"price": 9.99}, HTTPStatus.UNPROCESSABLE_ENTITY),
-#         ({"name": "new name", "price": 9.99}, HTTPStatus.OK),
-#     ],
-# )
-# def test_put_item(
-#     existing_item: dict[str, Any],
-#     body: dict[str, Any],
-#     status_code: int,
-# ) -> None:
-#     item_id = existing_item["id"]
-#     response = client.put(f"/item/{item_id}", json=body)
+@pytest.mark.parametrize(
+    ("body", "status_code"),
+    [
+        ({}, HTTPStatus.UNPROCESSABLE_ENTITY),
+        ({"price": 9.99}, HTTPStatus.UNPROCESSABLE_ENTITY),
+        ({"name": "new name", "price": 9.99}, HTTPStatus.OK),
+    ],
+)
+def test_put_item(
+    existing_item: dict[str, Any],
+    body: dict[str, Any],
+    status_code: int,
+) -> None:
+    item_id = existing_item["id"]
+    response = client.put(f"/item/{item_id}", json=body)
 
-#     assert response.status_code == status_code
+    assert response.status_code == status_code
 
-#     if status_code == HTTPStatus.OK:
-#         new_item = existing_item.copy()
-#         new_item.update(body)
-#         assert response.json() == new_item
+    if status_code == HTTPStatus.OK:
+        new_item = existing_item.copy()
+        new_item.update(body)
+        assert response.json() == new_item
 
+@pytest.mark.parametrize(
+    ("item", "body", "status_code"),
+    [
+        ("deleted_item", {}, HTTPStatus.NOT_MODIFIED),
+        ("deleted_item", {"price": 9.99}, HTTPStatus.NOT_MODIFIED),
+        ("deleted_item", {"name": "new name", "price": 9.99}, HTTPStatus.NOT_MODIFIED),
+        ("existing_item", {}, HTTPStatus.OK),
+        ("existing_item", {"price": 9.99}, HTTPStatus.OK),
+        ("existing_item", {"name": "new name", "price": 9.99}, HTTPStatus.OK),
+        (
+            "existing_item",
+            {"name": "new name", "price": 9.99, "odd": "value"},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+        ),
+        (
+            "existing_item",
+            {"name": "new name", "price": 9.99, "deleted": True},
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+        ),
+    ],
+)
+def test_patch_item(request, item: str, body: dict[str, Any], status_code: int) -> None:
+    print(f"BODY HERE!!! {body}")
+    item_data: dict[str, Any] = request.getfixturevalue(item)
+    item_id = item_data["id"]
+    response = client.patch(f"/item/{item_id}", json=body)
 
-# # @pytest.mark.xfail()
-# @pytest.mark.parametrize(
-#     ("item", "body", "status_code"),
-#     [
-#         ("deleted_item", {}, HTTPStatus.NOT_MODIFIED),
-#         ("deleted_item", {"price": 9.99}, HTTPStatus.NOT_MODIFIED),
-#         ("deleted_item", {"name": "new name", "price": 9.99}, HTTPStatus.NOT_MODIFIED),
-#         ("existing_item", {}, HTTPStatus.OK),
-#         ("existing_item", {"price": 9.99}, HTTPStatus.OK),
-#         ("existing_item", {"name": "new name", "price": 9.99}, HTTPStatus.OK),
-#         (
-#             "existing_item",
-#             {"name": "new name", "price": 9.99, "odd": "value"},
-#             HTTPStatus.UNPROCESSABLE_ENTITY,
-#         ),
-#         (
-#             "existing_item",
-#             {"name": "new name", "price": 9.99, "deleted": True},
-#             HTTPStatus.UNPROCESSABLE_ENTITY,
-#         ),
-#     ],
-# )
-# def test_patch_item(request, item: str, body: dict[str, Any], status_code: int) -> None:
-#     item_data: dict[str, Any] = request.getfixturevalue(item)
-#     item_id = item_data["id"]
-#     response = client.patch(f"/item/{item_id}", json=body)
+    assert response.status_code == status_code
 
-#     assert response.status_code == status_code
+    if status_code == HTTPStatus.OK:
+        patch_response_body = response.json()
 
-#     if status_code == HTTPStatus.OK:
-#         patch_response_body = response.json()
+        response = client.get(f"/item/{item_id}")
+        patched_item = response.json()
 
-#         response = client.get(f"/item/{item_id}")
-#         patched_item = response.json()
+        assert patched_item == patch_response_body
 
-#         assert patched_item == patch_response_body
+def test_delete_item(existing_item: dict[str, Any]) -> None:
+    item_id = existing_item["id"]
 
+    response = client.delete(f"/item/{item_id}")
+    assert response.status_code == HTTPStatus.OK
 
-# # @pytest.mark.xfail()
-# def test_delete_item(existing_item: dict[str, Any]) -> None:
-#     item_id = existing_item["id"]
+    response = client.get(f"/item/{item_id}")
+    assert response.status_code == HTTPStatus.NOT_FOUND
 
-#     response = client.delete(f"/item/{item_id}")
-#     assert response.status_code == HTTPStatus.OK
-
-#     response = client.get(f"/item/{item_id}")
-#     assert response.status_code == HTTPStatus.NOT_FOUND
-
-#     response = client.delete(f"/item/{item_id}")
-#     assert response.status_code == HTTPStatus.OK
+    response = client.delete(f"/item/{item_id}")
+    assert response.status_code == HTTPStatus.OK

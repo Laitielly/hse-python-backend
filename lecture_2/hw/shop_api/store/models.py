@@ -1,14 +1,14 @@
 from __future__ import annotations
 from dataclasses import field
-from pydantic import BaseModel
+from dataclasses import dataclass
 from typing import List
 
 from lecture_2.hw.shop_api.api.item.contracts import (
     ItemRequest
 )
 
-
-class Item(BaseModel):
+@dataclass(slots=True)
+class Item:
     id: int
     name: str
     price: float
@@ -20,16 +20,23 @@ class Item(BaseModel):
                         price=request.price)
 
         return new_item
+    
+    def update_name(self, name) -> None:
+        self.name = name
 
-class CartItem(BaseModel):
+    def update_price(self, price) -> None:
+        self.price = price
+
+    def update(self, request) -> None:
+        self.update_name(request.name)
+        self.update_price(request.price)
+
+@dataclass(slots=True)
+class CartItem:
     id: int
     item_name: str
     quantity: int
     available: bool
-
-    model_config = {
-        'ignored_types': (dict,)
-    }
 
     @staticmethod
     def from_item(item: Item) -> CartItem:
@@ -40,7 +47,8 @@ class CartItem(BaseModel):
             available = True
         )
 
-class Cart(BaseModel):
+@dataclass(slots=True)
+class Cart:
     id: int
     items: List[CartItem] = field(default_factory=list)
     price: float = 0.0

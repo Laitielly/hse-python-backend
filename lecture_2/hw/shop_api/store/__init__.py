@@ -6,7 +6,10 @@ from .queries import (
     add_item_to_cart,
     generate_new_item,
     get_item_from_id,
-    get_items
+    get_items,
+    update_item,
+    patch_item,
+    delete_item
 )
 
 __all__ = [
@@ -19,5 +22,8 @@ __all__ = [
     "add_item_to_cart",
     "generate_new_item",
     "get_item_from_id",
-    "get_items"
+    "get_items",
+    "update_item",
+    "patch_item",
+    "delete_item"
 ]
