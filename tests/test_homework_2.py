@@ -75,12 +75,14 @@ def deleted_item(existing_item: dict[str, Any]) -> dict[str, Any]:
     existing_item["deleted"] = True
     return existing_item
 
+
 def test_post_cart() -> None:
     response = client.post("/cart")
 
     assert response.status_code == HTTPStatus.CREATED
     assert "location" in response.headers
     assert "id" in response.json()
+
 
 @pytest.mark.parametrize(
     ("cart", "not_empty"),
@@ -102,7 +104,6 @@ def test_get_cart(request, cart: int, not_empty: bool) -> None:
 
     if not_empty:
         price = 0
-        print(response_json["items"])
 
         for item in response_json["items"]:
             item_id = item["id"]
@@ -111,6 +112,7 @@ def test_get_cart(request, cart: int, not_empty: bool) -> None:
         assert response_json["price"] == pytest.approx(price, 1e-8)
     else:
         assert response_json["price"] == 0.0
+
 
 @pytest.mark.parametrize(
     ("query", "status_code"),
@@ -174,6 +176,7 @@ def test_get_item(existing_item: dict[str, Any]) -> None:
     assert response.status_code == HTTPStatus.OK
     assert response.json() == existing_item
 
+
 @pytest.mark.parametrize(
     ("query", "status_code"),
     [
@@ -231,6 +234,7 @@ def test_put_item(
         new_item.update(body)
         assert response.json() == new_item
 
+
 @pytest.mark.parametrize(
     ("item", "body", "status_code"),
     [
@@ -253,7 +257,6 @@ def test_put_item(
     ],
 )
 def test_patch_item(request, item: str, body: dict[str, Any], status_code: int) -> None:
-    print(f"BODY HERE!!! {body}")
     item_data: dict[str, Any] = request.getfixturevalue(item)
     item_id = item_data["id"]
     response = client.patch(f"/item/{item_id}", json=body)
@@ -268,6 +271,7 @@ def test_patch_item(request, item: str, body: dict[str, Any], status_code: int) 
 
         assert patched_item == patch_response_body
 
+
 def test_delete_item(existing_item: dict[str, Any]) -> None:
     item_id = existing_item["id"]
 
@@ -279,3 +283,4 @@ def test_delete_item(existing_item: dict[str, Any]) -> None:
 
     response = client.delete(f"/item/{item_id}")
     assert response.status_code == HTTPStatus.OK
+    
