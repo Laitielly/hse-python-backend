@@ -1,0 +1,24 @@
+# docker build -f ./docker/dockerfile -t python-backend-hw3:latest .
+FROM python:3.12 AS base
+
+ARG PYTHONFAULTHANDLER=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=on \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=500
+
+WORKDIR /app
+
+COPY .. /app
+
+RUN apt-get update && apt-get install -y gcc
+RUN python -m pip install --upgrade pip
+RUN pip install poetry
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry install
+
+EXPOSE 8080
+
+CMD ["poetry", "run", "uvicorn", "lecture_4.demo_service.api.main:create_app", "--host", "0.0.0.0", "--port", "8080"]
