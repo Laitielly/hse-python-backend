@@ -1,22 +1,33 @@
 import http from 'k6/http';
+import { check, sleep } from 'k6';
 
-const baseUrl = 'http://localhost:8000';
+const serviceUrl = 'http://localhost:8080';
 
-export const options = {
-  scenarios: {
-    constant_request_rate: {
-      executor: 'ramping-arrival-rate',
-      startRate: 0,
-      stages: [
-        { target: 60000, duration: '15m' },
-      ],
-      preAllocatedVUs: 100,
-      maxVUs: 200,
-    },
-  },
+export let options = {
+  stages: [
+    { duration: "10m", target: 500 }, 
+    { duration: "2m", target: 0 },
+  ],
 };
 
 
-export default function() {
-  http.get(`${baseUrl}/`)
+export default function () {
+  let newUser = {
+    username: `testuser_${__VU}_${__ITER}`,
+    name: "Sample User",
+    birthdate: "2024-10-21",
+    password: "strongPassword123"
+  };
+
+  let createUserResponse = http.post(
+    `${serviceUrl}/user-register`,
+    JSON.stringify(newUser),
+    { headers: { "Content-Type": "application/json" } }
+  );
+
+  check(createUserResponse, {
+    'User creation was successful': (r) => r.status === 200,
+  });
+
+  sleep(1);
 }
