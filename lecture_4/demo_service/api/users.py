@@ -34,6 +34,7 @@ async def get_user(
     id: Annotated[int | None, Query()] = None,
     username: Annotated[str | None, Query()] = None,
 ) -> UserResponse:
+    entity = None
     if id is not None and username is not None:
         raise ValueError("both id and username are provided")
 
